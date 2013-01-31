@@ -2,10 +2,14 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Main where
 
-import Control.Lens
-import Heist
-import Snap
-import Snap.Snaplet.Heist
+import           Control.Lens
+import           Data.Monoid
+import qualified Data.Text as T
+import           Heist
+import           Heist.Interpreted
+import           Snap
+import           Snap.Snaplet.Heist
+import           Text.XmlHtml
 
 ------------------------------------------------------------------------------
 -- | Not sure whether we want these types specifically reified into an
@@ -23,6 +27,36 @@ data GenTypes
   -- ^ This type would be used on a heist tag that functions as a
   -- runChildren-style loop.
   deriving (Read, Show, Eq, Enum)
+
+
+------------------------------------------------------------------------------
+-- | Uses the \"fake\" attribute to determine what type of random data should
+-- be generated for this node.  Usage might look something like this:
+--
+-- > <ul>
+-- >  <personListing fake="loop 5">
+-- >   <li>
+-- >    <firstName fake="enum firstName"/> <lastName fake="enum lastName"/>
+-- >   </li>
+-- >  </personListing>
+-- > </ul>
+fakeNode :: Node -> [Node]
+fakeNode n = case getAttribute "fake" n of
+    Nothing -> [n]
+    Just ty -> go (T.splitOn " " ty)
+  where
+    -- | Use the first token as the generator type and the rest of the list as
+    -- parameters.
+    go [] = []
+    go (_type:params) = undefined
+
+
+charadeSplice :: Monad n => Splice n
+charadeSplice = do
+    (Element n attrs ch) <- getParamNode
+    let ch' = concat $ map fakeNode ch
+    runNode $ Element n attrs ch'
+
 
 ------------------------------------------------------------------------------
 -- The web app
@@ -42,8 +76,12 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     -- I didn't use the "templates" directory like we usually use.  This
     -- probably needs to be a configurable parameter.
     h <- nestSnaplet "heist" heist $ heistInit ""
-
     addRoutes [ ("", cHeistServe) ]
+
+    -- Heist doesn't have a catch-all splice, and attribute splices won't work
+    -- since we want to modify the actual node, so we use a load time
+    -- interpreted splice attached to the body tag.
+    addConfig h $ mempty { hcLoadTimeSplices = [("body", charadeSplice)] }
     return $ App h
 
 main :: IO ()
