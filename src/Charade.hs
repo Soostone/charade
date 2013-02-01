@@ -67,12 +67,25 @@ genLoop node [a,b] = do
         maxCount = either error fst (decimal b) :: Int
     count <- choose (minCount, maxCount)
     genLoop' node count
-genLoop _ _ = error "invalid number of parameters to real generator"
+genLoop _ _ = error "invalid number of parameters to loop generator"
 
 genLoop' :: Node -> Int -> Gen [Node]
 genLoop' node count =
     liftM concat $ vectorOf count $ liftM concat
                  $ mapM fakeNode (childNodes node)
+
+
+------------------------------------------------------------------------------
+-- | Loop generation
+lorem = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+genLorem :: [Text] -> Gen [Node]
+genLorem [] = return [TextNode lorem]
+genLorem [n] = return [TextNode $ T.intercalate " " $ replicate count lorem]
+  where
+    count = either error fst (decimal n)
+genLorem _ = error "invalid number of parameters to lorem generator"
+
 
 ------------------------------------------------------------------------------
 -- | Uses the \"fake\" attribute to determine what type of random data should
@@ -103,6 +116,7 @@ dispatchGenerator node (_type:params) =
       "int"     -> genInt params
       "decimal" -> genReal params
       "loop"    -> genLoop node params
+      "lorem"   -> genLorem params
       _         -> error "generator type not recognized"
 
 
