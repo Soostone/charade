@@ -2,10 +2,11 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Main where
 
+-------------------------------------------------------------------------------
 import           Control.Lens
 import           Data.Monoid
-import           Data.Text (Text)
-import qualified Data.Text as T
+import           Data.Text           (Text)
+import qualified Data.Text           as T
 import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
@@ -16,6 +17,8 @@ import           Test.QuickCheck.Gen
 import           Text.XmlHtml
 ------------------------------------------------------------------------------
 import           Heist.Charade
+-------------------------------------------------------------------------------
+
 
 ------------------------------------------------------------------------------
 -- | Not sure whether we want these types specifically reified into an
@@ -40,7 +43,7 @@ data GenTypes
 genInt :: [Text] -> Gen [Node]
 genInt [] = genInt' 0 100
 genInt [a,b] = genInt' (read $ T.unpack a) (read $ T.unpack b)
-genInt _ = error "invalid number of parameters to int generator"
+genInt _ = error "charade: invalid number of parameters to int generator"
 
 genInt' :: Int -> Int -> Gen [Node]
 genInt' a b = fmap ((:[]) . TextNode . T.pack . show) $ choose (a,b)
@@ -51,7 +54,7 @@ genInt' a b = fmap ((:[]) . TextNode . T.pack . show) $ choose (a,b)
 genReal :: [Text] -> Gen [Node]
 genReal [] = genReal' 0 1
 genReal [a,b] = genReal' (read $ T.unpack a) (read $ T.unpack b)
-genReal _ = error "invalid number of parameters to real generator"
+genReal _ = error "charade: invalid number of parameters to real generator"
 
 genReal' :: Double -> Double -> Gen [Node]
 genReal' a b = fmap ((:[]) . TextNode . T.pack . show) $ choose (a,b)
@@ -67,7 +70,7 @@ genLoop node [a,b] = do
         maxCount = either error fst (decimal b) :: Int
     count <- choose (minCount, maxCount)
     genLoop' node count
-genLoop _ _ = error "invalid number of parameters to loop generator"
+genLoop _ _ = error "charade: invalid number of parameters to loop generator"
 
 genLoop' :: Node -> Int -> Gen [Node]
 genLoop' node count =
@@ -84,7 +87,7 @@ genLorem [] = return [TextNode lorem]
 genLorem [n] = return [TextNode $ T.intercalate " " $ replicate count lorem]
   where
     count = either error fst (decimal n)
-genLorem _ = error "invalid number of parameters to lorem generator"
+genLorem _ = error "charade: invalid number of parameters to lorem generator"
 
 
 ------------------------------------------------------------------------------
@@ -117,7 +120,7 @@ dispatchGenerator node (_type:params) =
       "decimal" -> genReal params
       "loop"    -> genLoop node params
       "lorem"   -> genLorem params
-      _         -> error "generator type not recognized"
+      x         -> error $ "charade: Generator type " ++ x ++ " not recognized"
 
 
 --charadeSplice :: Monad n => Splice n
@@ -135,7 +138,7 @@ charadeSplice = do
 ------------------------------------------------------------------------------
 
 data App = App
-    { _heist :: Snaplet (Heist App)
+    { _heist        :: Snaplet (Heist App)
     , _randomSource :: Maybe StdGen
     }
 
