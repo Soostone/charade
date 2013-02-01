@@ -3,6 +3,8 @@
 module Main where
 
 import           Control.Lens
+import qualified Data.Configurator as C
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -15,7 +17,7 @@ import           System.Random
 import           Test.QuickCheck.Gen
 import           Text.XmlHtml
 ------------------------------------------------------------------------------
-import           Heist.Charade
+
 
 ------------------------------------------------------------------------------
 -- | Not sure whether we want these types specifically reified into an
@@ -77,6 +79,7 @@ genLoop' node count =
 
 ------------------------------------------------------------------------------
 -- | Loop generation
+lorem :: Text
 lorem = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 genLorem :: [Text] -> Gen [Node]
@@ -120,7 +123,7 @@ dispatchGenerator node (_type:params) =
       _         -> error "generator type not recognized"
 
 
---charadeSplice :: Monad n => Splice n
+charadeSplice :: HeistT IO IO [Node]
 charadeSplice = do
     (Element n attrs ch1) <- getParamNode
     stdGen <- liftIO getStdGen
@@ -146,9 +149,13 @@ instance HasHeist App where
 
 charadeInit :: SnapletInit App App
 charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
+    cfg <- getSnapletUserConfig
+    tdir <- liftM (fromMaybe (error "Must specify template directory")) $
+             liftIO $ C.lookup cfg "tdir"
+
     -- I didn't use the "templates" directory like we usually use.  This
     -- probably needs to be a configurable parameter.
-    h <- nestSnaplet "heist" heist $ heistInit ""
+    h <- nestSnaplet "heist" heist $ heistInit tdir
     addRoutes [ ("", cHeistServe) ]
 
     -- Heist doesn't have a catch-all splice, and attribute splices won't work
@@ -159,5 +166,5 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
 
 main :: IO ()
 main = do
-  (_,s,_) <- runSnaplet Nothing charadeInit
+  (_,s,_) <- runSnaplet (Just "charade") charadeInit
   quickHttpServe s
