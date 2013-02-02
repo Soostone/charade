@@ -1,4 +1,4 @@
-<apply template="base">
+<apply template="_base">
 <ul>
   <itemListing fake="loop 3 10">
     <li><firstName fake="first-name"/> <lastName fake="last-name"/></li>

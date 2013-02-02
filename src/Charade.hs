@@ -14,6 +14,7 @@ import           Heist
 import           Heist.Interpreted
 import           Snap
 import           Snap.Snaplet.Heist
+import           System.FilePath
 import           System.Random
 import           Test.QuickCheck.Gen
 import           Text.XmlHtml
@@ -164,25 +165,28 @@ splices = [("body", charadeSplice)]
 
 charadeInit :: SnapletInit App App
 charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
+    rootDir <- getSnapletFilePath
     cfg <- getSnapletUserConfig
     tdir <- liftM (fromMaybe (error "Must specify tdir in charade.cfg")) $
              liftIO $ C.lookup cfg "tdir"
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
+
+    -- I didn't use the "templates" directory like we usually use.  This
+    -- probably needs to be a configurable parameter.
+    h <- nestSnaplet "heist" heist $
+           heistInit' "" $ mempty { hcLoadTimeSplices = defaultLoadTimeSplices }
+    addRoutes [ ("", heistServe) ]
 
     let heistConfig = case mode of
           (Just "static") -> mempty { hcLoadTimeSplices = splices }
           (Just "dynamic") -> mempty { hcInterpretedSplices = splices }
           _ -> error "Must specify mode = 'static' or 'dynamic' in charade.cfg"
 
-    -- I didn't use the "templates" directory like we usually use.  This
-    -- probably needs to be a configurable parameter.
-    h <- nestSnaplet "heist" heist $ heistInit' tdir heistConfig
-    addRoutes [ ("", heistServe) ]
-
     -- Heist doesn't have a catch-all splice, and attribute splices won't work
     -- since we want to modify the actual node, so we use a load time
     -- interpreted splice attached to the body tag.
     addConfig h heistConfig
+    addTemplatesAt h "" (rootDir </> tdir)
     return $ App h
 
 main :: IO ()

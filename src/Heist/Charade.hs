@@ -20,5 +20,6 @@ removeFake :: Node -> Node
 removeFake (Element tag attrs ch) = Element tag attrs' $ map removeFake ch
   where
     attrs' = filter ((/="fake") . fst) attrs
+removeFake n = n
 
 
