@@ -21,8 +21,7 @@ import           Text.XmlHtml
 
 
 data App = App
-    { _heist        :: Snaplet (Heist App)
-    , _randomSource :: Maybe StdGen
+    { _heist :: Snaplet (Heist App)
     }
 
 makeLenses ''App
@@ -170,21 +169,21 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
              liftIO $ C.lookup cfg "tdir"
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
 
-    -- I didn't use the "templates" directory like we usually use.  This
-    -- probably needs to be a configurable parameter.
-    h <- nestSnaplet "heist" heist $ heistInit tdir
-    addRoutes [ ("", heistServe) ]
-
     let heistConfig = case mode of
           (Just "static") -> mempty { hcLoadTimeSplices = splices }
           (Just "dynamic") -> mempty { hcInterpretedSplices = splices }
           _ -> error "Must specify mode = 'static' or 'dynamic' in charade.cfg"
 
+    -- I didn't use the "templates" directory like we usually use.  This
+    -- probably needs to be a configurable parameter.
+    h <- nestSnaplet "heist" heist $ heistInit' tdir heistConfig
+    addRoutes [ ("", heistServe) ]
+
     -- Heist doesn't have a catch-all splice, and attribute splices won't work
     -- since we want to modify the actual node, so we use a load time
     -- interpreted splice attached to the body tag.
     addConfig h heistConfig
-    return $ App h Nothing
+    return $ App h
 
 main :: IO ()
 main = do
