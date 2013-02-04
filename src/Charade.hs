@@ -5,10 +5,13 @@ module Main where
 -------------------------------------------------------------------------------
 import           Control.Lens hiding (elements)
 import qualified Data.Configurator as C
+import           Data.Configurator.Types
+import qualified Data.Map            as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text           (Text)
 import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
 import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
@@ -72,20 +75,20 @@ genReal' a b = fmap ((:[]) . TextNode . T.pack . show) $ choose (a,b)
 
 ------------------------------------------------------------------------------
 -- | Loop generation
-genLoop :: Node -> [Text] -> Gen [Node]
-genLoop node [] = genLoop' node 5
-genLoop node [n] = genLoop' node $ either error fst (decimal n)
-genLoop node [a,b] = do
+genLoop :: M.Map Text [Text] -> Node -> [Text] -> Gen [Node]
+genLoop enums node [] = genLoop' enums node 5
+genLoop enums node [n] = genLoop' enums node $ either error fst (decimal n)
+genLoop enums node [a,b] = do
     let minCount = either error fst (decimal a) :: Int
         maxCount = either error fst (decimal b) :: Int
     count <- choose (minCount, maxCount)
-    genLoop' node count
-genLoop _ _ = error "charade: invalid number of parameters to loop generator"
+    genLoop' enums node count
+genLoop _ _ _ = error "charade: invalid number of parameters to loop generator"
 
-genLoop' :: Node -> Int -> Gen [Node]
-genLoop' node count =
+genLoop' :: M.Map Text [Text] -> Node -> Int -> Gen [Node]
+genLoop' enums node count =
     liftM concat $ vectorOf count $ liftM concat
-                 $ mapM fakeNode (childNodes node)
+                 $ mapM (fakeNode enums) (childNodes node)
 
 
 ------------------------------------------------------------------------------
@@ -105,7 +108,14 @@ genLorem _ = error "charade: invalid number of parameters to lorem generator"
 -- | Enum generation
 genEnum :: [Text] -> [Node] -> Gen [Node]
 genEnum [] = fmap (:[]) . elements
-genEnum _ = error "charade: invalid number of parameters to lorem generator"
+genEnum _ = error "charade: invalid number of parameters to enum generator"
+
+
+------------------------------------------------------------------------------
+-- | Enum generation
+genDynEnum :: M.Map Text [Text] -> [Text] -> Gen [Node]
+genDynEnum enums [file] = genEnum [] (map TextNode $ enums M.! file)
+genDynEnum _ _ = error "charade: must supply an file to the enum type"
 
 
 ------------------------------------------------------------------------------
@@ -119,38 +129,39 @@ genEnum _ = error "charade: invalid number of parameters to lorem generator"
 -- >   </li>
 -- >  </personListing>
 -- > </ul>
-fakeNode :: Node -> Gen [Node]
-fakeNode n@(Element t a c) = case getAttribute "fake" n of
+fakeNode :: M.Map Text [Text] -> Node -> Gen [Node]
+fakeNode enums n@(Element t a c) = case getAttribute "fake" n of
     Nothing -> do
-      c' <- liftM concat $ mapM fakeNode c
+      c' <- liftM concat $ mapM (fakeNode enums) c
       return [Element t a c']
-    Just ty -> dispatchGenerator n (T.splitOn " " ty)
-fakeNode n = return [n]
+    Just ty -> dispatchGenerator enums n (T.splitOn " " ty)
+fakeNode _ n = return [n]
 
 
 -- | Use the first token as the generator type and the rest of the list as
 -- parameters.
-dispatchGenerator :: Node -> [Text] -> Gen [Node]
-dispatchGenerator _ [] = return []
-dispatchGenerator node (_type:params) =
+dispatchGenerator :: M.Map Text [Text] -> Node -> [Text] -> Gen [Node]
+dispatchGenerator _ _ [] = return []
+dispatchGenerator enums node (_type:params) =
     case T.unpack _type of
       "bool"       -> genEnum params $ map TextNode ["true", "false"]
       "yesno"      -> genEnum params $ map TextNode ["yes", "no"]
       "int"        -> genInt params
       "decimal"    -> genReal params
-      "loop"       -> genLoop node params
+      "loop"       -> genLoop enums node params
       "lorem"      -> genLorem params
       "first-name" -> genEnum params $ map TextNode firstNames
       "last-name"  -> genEnum params $ map TextNode lastNames
+      "enum"       -> genDynEnum enums params
       x            -> error $ "charade: Generator type " ++ x ++
                               " not recognized"
 
 
-charadeSplice :: MonadIO n => HeistT n n [Node]
-charadeSplice = do
+charadeSplice :: MonadIO n => M.Map Text [Text] -> HeistT n n [Node]
+charadeSplice enums = do
     stdGen <- liftIO newStdGen
     (Element n attrs ch1) <- getParamNode
-    let ch2 = unGen (mapM fakeNode ch1) stdGen 1
+    let ch2 = unGen (mapM (fakeNode enums) ch1) stdGen 1
     ch3 <- runNodeList (concat ch2)
     stopRecursion
     return [Element n attrs ch3]
@@ -160,16 +171,29 @@ charadeSplice = do
 -- The web app
 ------------------------------------------------------------------------------
 
-splices :: MonadIO n => [(Text, HeistT n n [Node])]
-splices = [("body", charadeSplice)]
+splices :: MonadIO n => M.Map Text [Text] -> [(Text, HeistT n n [Node])]
+splices enums = [("body", charadeSplice enums)]
+
+loadEnums :: Value -> IO [(Text, [Text])]
+loadEnums (List files) = mapM (loadEnum . convert) files
+loadEnums _ = error "charade.cfg: enums must be a list of files"
+
+loadEnum :: Maybe FilePath -> IO (Text, [Text])
+loadEnum Nothing = error "charade.cfg: all enums must be string filenames"
+loadEnum (Just p) = do
+    contents <- T.readFile p
+    return (T.pack p, T.lines contents)
+
 
 charadeInit :: SnapletInit App App
 charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     rootDir <- getSnapletFilePath
     cfg <- getSnapletUserConfig
     tdir <- liftM (fromMaybe (error "Must specify tdir in charade.cfg")) $
-             liftIO $ C.lookup cfg "tdir"
+              liftIO $ C.lookup cfg "tdir"
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
+    enumFiles <- liftIO $ C.lookupDefault (List []) cfg "enums"
+    enumMap <- liftIO $ liftM M.fromList $ loadEnums enumFiles
 
     -- I didn't use the "templates" directory like we usually use.  This
     -- probably needs to be a configurable parameter.
@@ -178,8 +202,8 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     addRoutes [ ("", heistServe) ]
 
     let heistConfig = case mode of
-          (Just "static") -> mempty { hcLoadTimeSplices = splices }
-          (Just "dynamic") -> mempty { hcInterpretedSplices = splices }
+          (Just "static") -> mempty { hcLoadTimeSplices = splices enumMap}
+          (Just "dynamic") -> mempty { hcInterpretedSplices = splices enumMap}
           _ -> error "Must specify mode = 'static' or 'dynamic' in charade.cfg"
 
     -- Heist doesn't have a catch-all splice, and attribute splices won't work
