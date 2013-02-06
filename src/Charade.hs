@@ -16,6 +16,7 @@ import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
 import           Snap
+import           Snap.Util.FileServe
 import           Snap.Snaplet.Heist
 import           System.FilePath
 import           System.Random
@@ -184,7 +185,6 @@ loadEnum (Just p) = do
     contents <- T.readFile p
     return (T.pack p, T.lines contents)
 
-
 charadeInit :: SnapletInit App App
 charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     rootDir <- getSnapletFilePath
@@ -194,12 +194,20 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
     enumFiles <- liftIO $ C.lookupDefault (List []) cfg "enums"
     enumMap <- liftIO $ liftM M.fromList $ loadEnums enumFiles
+    staticRoute <- liftIO $ C.lookupDefault
+      (error "charade: Must specify staticRoute in charade.cfg")
+      cfg "staticRoute"
+    staticDir <- liftIO $ C.lookupDefault
+      (error "charade: Must specify staticDir in charade.cfg")
+      cfg "staticDir"
 
     -- I didn't use the "templates" directory like we usually use.  This
     -- probably needs to be a configurable parameter.
     h <- nestSnaplet "heist" heist $
            heistInit' "" $ mempty { hcLoadTimeSplices = defaultLoadTimeSplices }
-    addRoutes [ ("", heistServe) ]
+    addRoutes [ ("",          heistServe)
+              , (staticRoute, serveDirectory staticDir)
+              ]
 
     let heistConfig = case mode of
           (Just "static") -> mempty { hcLoadTimeSplices = splices enumMap}

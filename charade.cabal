@@ -51,6 +51,7 @@ Executable charade
     heist               >= 0.11    && < 0.12,
     random              >= 1.0     && < 1.1,
     snap                >= 0.11    && < 0.12,
+    snap-core           >= 0.9     && < 0.11,
     snap-server         >= 0.9     && < 0.11,
     text                >= 0.11    && < 0.12,
     xmlhtml             >= 0.2     && < 0.3
