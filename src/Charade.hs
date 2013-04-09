@@ -206,6 +206,7 @@ charadeInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     h <- nestSnaplet "heist" heist $
            heistInit' "" $ mempty { hcLoadTimeSplices = defaultLoadTimeSplices }
     addRoutes [ ("",          heistServe)
+              , ("heist/heistReload", with heist $ failIfNotLocal heistReloader)
               , (staticRoute, serveDirectory staticDir)
               ]
 
