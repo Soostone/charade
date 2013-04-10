@@ -1,9 +1,12 @@
 name:           charade
 version:        0.1
-synopsis:       Auto-generation of HTML content
+synopsis:       Rapid prototyping websites with Snap and Heist
 description:
-    This package makes it easy to create mockup websites for rapid prototyping
-    using Heist and Snap.
+  Charade is a tool for rapid website prototyping using Heist and Snap.
+  Charade-generated sites can easily be dropped in to Snap applications
+  and work out of the box with no modification.
+  .
+  For more information, see the @README@: <https://github.com/soostone/charade/blob/master/README.md>
 
 license:        BSD3
 license-file:   LICENSE
@@ -11,7 +14,7 @@ author:         Doug Beardsley
 maintainer:     doug.beardsley@soostone.com
 build-type:     Simple
 cabal-version:  >= 1.8
-homepage:       https://github.com/Soostone/charade
+homepage:       https://github.com/soostone/charade
 category:       Web
 
 extra-source-files:

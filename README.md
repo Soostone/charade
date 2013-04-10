@@ -29,3 +29,49 @@ look and feel without needing to set up any back end database infrastructure
 or give them an application binary.  This allows designers to work in an
 environment much closer to what will ultimately be used in production.
 
+The charade application is a snap application that serves Heist templates
+and static files.  The charade application allows you to add a \"fake\"
+attribute anywhere in your HTML to generate fake data in the place of that
+tag.  For instance, in the following paragraph charade will replace the
+\<myParagraph\> tag with a paragraph of lorem ipsum text.  
+
+    <p>
+      <myParagraph fake="lorem"/>
+    </p>
+
+Charade provides the following built-in primitives for generating dummy
+content with the \"fake\" attribute:
+
+* bool - true/false
+* yesno - yes/no
+* int \<min\> \<max\> - an integer in the interval [min,max]
+* decimal \<min\> \<max\> - a decimal in the interval [min,max]
+* list - a list of 5 copies of its child nodes
+* list \<count\> - a list of \<count\> copies of its child nodes
+* list \<min\> \<max\> - a randomly sized list
+* lorem - a paragraph of lorem ipsum text
+* lorem \<count\> - a paragraph of lorem ipsum text repeated \<count\> times
+* first-name - randomly chosen English first names
+* last-name - randomly chosen English last names
+* enum - arbitrary enumerations specified in a file
+
+The charade application also requires a file \"charade.cfg\" in the current
+directory for configuration.  The config file should look like this:
+
+    # Select whether random data is generated every request or only once when the
+    # app is initialized.  If you specify "dynamic" here, then new random data
+    # will be generated every request.  If you specify "static", then random data
+    # will be generated once and every request will see the same data.
+    mode = "dynamic"
+    
+    # Directory holding Heist templates
+    tdir = "snaplets/heist/templates"
+    
+    # List of files with custom enumerations for random generation
+    enums = ["titles.txt"]
+    
+    # Directory where static resources are located
+    staticDir = "static"
+    
+    # Route for accessing static data
+    staticRoute = ""
