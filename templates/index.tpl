@@ -1,6 +1,6 @@
 <apply template="_base">
 <ul>
-  <itemListing fake="loop 3 10">
+  <itemListing fake="list 3 10">
     <li><title fake="enum titles.txt"/> <firstName fake="first-name"/> <lastName fake="last-name"/></li>
   </itemListing>
 </ul>

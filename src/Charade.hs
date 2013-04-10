@@ -46,9 +46,9 @@ data GenTypes
   | EnumTextT
   -- ^ Text that comes from an enumeration.  This is useful for generating
   -- things like first names, last names, and other lists.
-  | ChildLoopT
+  | ChildListT
   -- ^ This type would be used on a heist tag that functions as a
-  -- runChildren-style loop.
+  -- runChildren-style list.
   deriving (Read, Show, Eq, Enum)
 
 
@@ -75,25 +75,25 @@ genReal' a b = fmap ((:[]) . TextNode . T.pack . show) $ choose (a,b)
 
 
 ------------------------------------------------------------------------------
--- | Loop generation
-genLoop :: M.Map Text [Text] -> Node -> [Text] -> Gen [Node]
-genLoop enums node [] = genLoop' enums node 5
-genLoop enums node [n] = genLoop' enums node $ either error fst (decimal n)
-genLoop enums node [a,b] = do
+-- | List generation
+genList :: M.Map Text [Text] -> Node -> [Text] -> Gen [Node]
+genList enums node [] = genList' enums node 5
+genList enums node [n] = genList' enums node $ either error fst (decimal n)
+genList enums node [a,b] = do
     let minCount = either error fst (decimal a) :: Int
         maxCount = either error fst (decimal b) :: Int
     count <- choose (minCount, maxCount)
-    genLoop' enums node count
-genLoop _ _ _ = error "charade: invalid number of parameters to loop generator"
+    genList' enums node count
+genList _ _ _ = error "charade: invalid number of parameters to list generator"
 
-genLoop' :: M.Map Text [Text] -> Node -> Int -> Gen [Node]
-genLoop' enums node count =
+genList' :: M.Map Text [Text] -> Node -> Int -> Gen [Node]
+genList' enums node count =
     liftM concat $ vectorOf count $ liftM concat
                  $ mapM (fakeNode enums) (childNodes node)
 
 
 ------------------------------------------------------------------------------
--- | Loop generation
+-- | List generation
 lorem :: Text
 lorem = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
@@ -124,7 +124,7 @@ genDynEnum _ _ = error "charade: must supply an file to the enum type"
 -- be generated for this node.  Usage might look something like this:
 --
 -- > <ul>
--- >  <personListing fake="loop 5">
+-- >  <personListing fake="list 5">
 -- >   <li>
 -- >    <firstName fake="enum firstName"/> <lastName fake="enum lastName"/>
 -- >   </li>
@@ -149,7 +149,7 @@ dispatchGenerator enums node (_type:params) =
       "yesno"      -> genEnum params $ map TextNode ["yes", "no"]
       "int"        -> genInt params
       "decimal"    -> genReal params
-      "loop"       -> genLoop enums node params
+      "list"       -> genList enums node params
       "lorem"      -> genLorem params
       "first-name" -> genEnum params $ map TextNode firstNames
       "last-name"  -> genEnum params $ map TextNode lastNames
