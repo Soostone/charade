@@ -30,7 +30,7 @@ or give them an application binary.  This allows designers to work in an
 environment much closer to what will ultimately be used in production.
 
 The charade application is a snap application that serves Heist templates
-and static files.  The charade application allows you to add a \"fake\"
+and static files.  The charade application allows you to add a "fake"
 attribute anywhere in your HTML to generate fake data in the place of that
 tag.  For instance, in the following paragraph charade will replace the
 \<myParagraph\> tag with a paragraph of lorem ipsum text.  
@@ -40,7 +40,7 @@ tag.  For instance, in the following paragraph charade will replace the
     </p>
 
 Charade provides the following built-in primitives for generating dummy
-content with the \"fake\" attribute:
+content with the "fake" attribute:
 
 * bool - true/false
 * yesno - yes/no
@@ -55,7 +55,7 @@ content with the \"fake\" attribute:
 * last-name - randomly chosen English last names
 * enum - arbitrary enumerations specified in a file
 
-The charade application also requires a file \"charade.cfg\" in the current
+The charade application also requires a file "charade.cfg" in the current
 directory for configuration.  The config file should look like this:
 
     # Select whether random data is generated every request or only once when the
