@@ -6,6 +6,11 @@ description:
   Charade-generated sites can easily be dropped into Snap applications
   and work out of the box with no modification.
   .
+  The main thing provided by this package is the charade executable that
+  serves your prototype sites.  The library provided contains a Heist splice
+  that you use to make all evidence of charade disappear in your production
+  app.
+  .
   For more information, see the @README@: <https://github.com/soostone/charade/blob/master/README.md>
 
 license:        BSD3
