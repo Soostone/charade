@@ -16,6 +16,7 @@ import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
 import           Snap
+import           Snap.Extras.SpliceUtils.Interpreted
 import           Snap.Util.FileServe
 import           Snap.Snaplet.Heist
 import           System.FilePath
@@ -175,6 +176,7 @@ charadeSplice enums = do
 splices :: MonadIO n => M.Map Text [Text] -> Splices (HeistT n n [Node])
 splices enums = do
     "body" ## charadeSplice enums
+    "staticscripts" ## scriptsSplice "static/js" "/"
 
 loadEnums :: Value -> IO [(Text, [Text])]
 loadEnums (List files) = mapM (loadEnum . convert) files
