@@ -60,7 +60,7 @@ Executable charade
     random              >= 1.0     && < 1.1,
     snap                >= 0.13    && < 0.14,
     snap-core           >= 0.9     && < 0.11,
-    snap-extras         >= 0.6     && < 0.7,
+    snap-extras         >= 0.7     && < 0.8,
     snap-server         >= 0.9     && < 0.11,
     text                >= 0.11    && < 0.12,
     xmlhtml             >= 0.2     && < 0.3
