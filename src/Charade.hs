@@ -172,8 +172,9 @@ charadeSplice enums = do
 -- The web app
 ------------------------------------------------------------------------------
 
-splices :: MonadIO n => M.Map Text [Text] -> [(Text, HeistT n n [Node])]
-splices enums = [("body", charadeSplice enums)]
+splices :: MonadIO n => M.Map Text [Text] -> Splices (HeistT n n [Node])
+splices enums = do
+    "body" ## charadeSplice enums
 
 loadEnums :: Value -> IO [(Text, [Text])]
 loadEnums (List files) = mapM (loadEnum . convert) files
