@@ -1,5 +1,5 @@
 name:           charade
-version:        0.1
+version:        0.1.1
 synopsis:       Rapid prototyping websites with Snap and Heist
 description:
   Charade is a tool for rapid website prototyping using Heist and Snap.
