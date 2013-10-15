@@ -6,6 +6,8 @@ module Heist.Charade
   ) where
 
 -------------------------------------------------------------------------------
+import           Control.Monad
+import           Control.Monad.Trans
 import qualified Data.Configurator as C
 import           Data.Configurator.Types
 import qualified Data.Map            as M
@@ -16,7 +18,7 @@ import qualified Data.Text.IO        as T
 import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
-import           Snap
+import           Snap.Snaplet
 import           Snap.Snaplet.Heist
 import           System.Random
 import           Test.QuickCheck.Gen
@@ -54,13 +56,20 @@ splices enums = "body" ## charadeSplice enums
 
 
 ------------------------------------------------------------------------------
--- | This is not a normal initializer.  You don't need to use nestSnaplet with
+-- | An initializer function that allows you to use charade functionality in
+-- your own applications.  This is useful in situations where you have
+-- implemented some of your application's functionality and you want your
+-- designers to use that, but you also want them to have charade functionality
+-- when working on portions of the site for which the backend has not been
+-- written yet.
+--
+-- This is not a normal initializer.  You don't need to use nestSnaplet with
 -- it.  Just call it directly from your application initializer.  When used in
 -- this mode, you don't need a separate charade.cfg file.  Just put a charade
--- block in your application config.
-charadeInit :: Snaplet (Heist b) -> Initializer b v ()
-charadeInit h = do
-    cfg <- getSnapletUserConfig
+-- block in your application config, extract it with the 'subconfig' function,
+-- and pass it to this function.
+charadeInit :: Snaplet (Heist b) -> Config -> Initializer b v ()
+charadeInit h cfg = do
     enumFiles <- liftIO $ C.lookupDefault (List []) cfg "enums"
     enumMap <- liftIO $ liftM M.fromList $ loadEnums enumFiles
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))

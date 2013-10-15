@@ -59,7 +59,7 @@ charadeAppInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     initTabs h
     addTemplatesAt h "" (rootDir </> tdir)
 
-    charadeInit h
+    charadeInit h cfg
     return $ App h
 
 main :: IO ()
