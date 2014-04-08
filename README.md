@@ -1,4 +1,4 @@
-charade
+charade [![Build Status](https://travis-ci.org/Soostone/charade.svg?branch=master)](https://travis-ci.org/Soostone/charade)
 =======
 
 Haskell program that fills Heist templates with randomly generated data in
