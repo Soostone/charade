@@ -8,20 +8,20 @@ module Heist.Charade
 -------------------------------------------------------------------------------
 import           Control.Monad
 import           Control.Monad.Trans
-import qualified Data.Configurator as C
+import qualified Data.Configurator       as C
 import           Data.Configurator.Types
-import qualified Data.Map            as M
+import qualified Data.Map                as M
 import           Data.Monoid
-import           Data.Text           (Text)
-import qualified Data.Text           as T
-import qualified Data.Text.IO        as T
+import           Data.Text               (Text)
+import qualified Data.Text               as T
+import qualified Data.Text.IO            as T
 import           Data.Text.Read
 import           Heist
 import           Heist.Interpreted
 import           Snap.Snaplet
 import           Snap.Snaplet.Heist
-import           System.Random
 import           Test.QuickCheck.Gen
+import           Test.QuickCheck.Random
 import           Text.XmlHtml
 ------------------------------------------------------------------------------
 
@@ -43,16 +43,18 @@ removeFake n = n
 
 charadeSplice :: MonadIO n => M.Map Text [Text] -> HeistT n n [Node]
 charadeSplice enums = do
-    stdGen <- liftIO newStdGen
+    gen <- liftIO newQCGen
     (Element n attrs ch1) <- getParamNode
-    let ch2 = unGen (mapM (fakeNode enums) ch1) stdGen 1
+    let ch2 = unGen (mapM (fakeNode enums) ch1) gen 1
     ch3 <- runNodeList (concat ch2)
     stopRecursion
     return [Element n attrs ch3]
 
 
 splices :: MonadIO n => M.Map Text [Text] -> Splices (HeistT n n [Node])
-splices enums = "body" ## charadeSplice enums
+splices enums = do
+    defaultLoadTimeSplices
+    "body" ## charadeSplice enums
 
 
 ------------------------------------------------------------------------------

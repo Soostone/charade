@@ -8,4 +8,6 @@
 <p>Int <count fake="int 21 65"/>, decimal <probability fake="decimal -1 1"/></p>
 <p><postBody fake="lorem 2"/></p>
 <p>Active: <isActive fake="bool"/></p>
+<p>Here's where the markdown tag is:</p>
+<markdown file="test.md"/>
 </apply>
