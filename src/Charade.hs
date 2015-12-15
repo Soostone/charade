@@ -4,9 +4,10 @@ module Main where
 
 -------------------------------------------------------------------------------
 import           Control.Lens hiding (elements)
+import           Control.Monad
+import           Control.Monad.Trans
 import qualified Data.Configurator as C
 import           Data.Maybe
-import           Data.Monoid
 import           Heist
 import           Heist.Charade
 import           Snap
@@ -47,10 +48,10 @@ charadeAppInit = makeSnaplet "charade" "A heist charade" Nothing $ do
     -- I didn't use the "templates" directory like we usually use.  This
     -- probably needs to be a configurable parameter.
     h <- nestSnaplet "heist" heist $
-           heistInit' "" $ mempty { hcLoadTimeSplices = defaultLoadTimeSplices
-                                  , hcInterpretedSplices =
-                                      "staticscripts" ## scriptsSplice "static/js" "/"
-                                  }
+           heistInit' "" $ emptyHeistConfig
+                             & hcLoadTimeSplices .~ defaultLoadTimeSplices
+                             & hcInterpretedSplices .~
+                                 ("staticscripts" ## scriptsSplice "static/js" "/")
     addRoutes [ ("",          heistServe)
               , ("heist/heistReload", with heist $ failIfNotLocal heistReloader)
               , (staticRoute, serveDirectory staticDir)

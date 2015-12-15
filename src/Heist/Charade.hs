@@ -6,6 +6,7 @@ module Heist.Charade
   ) where
 
 -------------------------------------------------------------------------------
+import           Control.Lens            hiding (elements)
 import           Control.Monad
 import           Control.Monad.Trans
 import qualified Data.Configurator       as C
@@ -76,8 +77,10 @@ charadeInit h cfg = do
     enumMap <- liftIO $ liftM M.fromList $ loadEnums enumFiles
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
     let heistConfig = case mode of
-          (Just "static") -> mempty { hcLoadTimeSplices = splices enumMap}
-          (Just "dynamic") -> mempty { hcInterpretedSplices = splices enumMap}
+          (Just "static") -> mempty
+                               & scLoadTimeSplices .~ splices enumMap
+          (Just "dynamic") -> mempty
+                                & scInterpretedSplices .~ splices enumMap
           _ -> error "Must specify mode = 'static' or 'dynamic' in charade.cfg"
 
     -- Heist doesn't have a catch-all splice, and attribute splices won't work
