@@ -8,6 +8,7 @@ import           Control.Monad
 import           Control.Monad.Trans
 import qualified Data.Configurator as C
 import           Data.Maybe
+import           Data.Map.Syntax     ((##))
 import           Heist
 import           Heist.Charade
 import           Snap

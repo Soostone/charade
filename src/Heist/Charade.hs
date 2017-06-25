@@ -12,6 +12,7 @@ import           Control.Monad.Trans
 import qualified Data.Configurator       as C
 import           Data.Configurator.Types
 import qualified Data.Map                as M
+import           Data.Map.Syntax         ((##))
 import           Data.Monoid
 import           Data.Text               (Text)
 import qualified Data.Text               as T
@@ -73,7 +74,7 @@ splices enums = do
 -- and pass it to this function.
 charadeInit :: Snaplet (Heist b) -> Config -> Initializer b v ()
 charadeInit h cfg = do
-    enumFiles <- liftIO $ C.lookupDefault (List []) cfg "enums"
+    enumFiles <- liftIO $ C.lookupDefault (Data.Configurator.Types.List []) cfg "enums"
     enumMap <- liftIO $ liftM M.fromList $ loadEnums enumFiles
     mode <- liftIO $ (C.lookup cfg "mode" :: IO (Maybe Text))
     let heistConfig = case mode of
@@ -214,7 +215,7 @@ dispatchGenerator enums node (_type:params) =
 
 
 loadEnums :: Value -> IO [(Text, [Text])]
-loadEnums (List files) = mapM (loadEnum . convert) files
+loadEnums (Data.Configurator.Types.List files) = mapM (loadEnum . convert) files
 loadEnums _ = error "charade.cfg: enums must be a list of files"
 
 
